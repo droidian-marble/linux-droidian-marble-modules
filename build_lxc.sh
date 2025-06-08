@@ -16,33 +16,12 @@ KMI_STRICT_MODE=true
 USE_SLIM_LLVM=true
 
 mkdir -p $OUTPUT_DIR
-mkdir -p ${OUTPUT_DIR}/vendor_boot_modules
 mkdir -p ${OUTPUT_DIR}/vendor_dlkm_modules
-mkdir -p ${OUTPUT_DIR}/alt_kernel_modules
 
 ########## Parsing parameters ##########
 
 use_defconfig=$DEFCONFIG
 make_target=
-
-while [ $# != 0 ]; do
-	case $1 in
-		"--") {
-			shift
-			make_target=$*
-			break
-		};;
-		*) {
-			cat <<EOF
-Usage: $0 <operate>
-operate:
-    -- <args>               : parameters passed directly to make
-EOF
-			exit 1
-		};;
-	esac
-	shift
-done
 
 ########## Preparation Phase ##########
 
@@ -50,9 +29,6 @@ export KBUILD_BUILD_HOST="halhadus"
 export KBUILD_BUILD_USER="halhadus"
 
 CLANG_PATH=/usr/lib/llvm-android-12.0-r416183b/bin
-if [ "$make_target" == "Image" ]; then
-	CLANG_PATH=/clang/bin
-fi
 
 export PATH=${CLANG_PATH}:${PATH}
 
@@ -61,7 +37,6 @@ export LOCALVERSION=-v3.8.1
 make_flags="ARCH=arm64 LLVM=1 LLVM_IAS=1 O=out"
 make_kcflags="-D__ANDROID_COMMON_KERNEL__ -O3"
 make_kbuild_ldflags=
-[ "$make_target" == "Image" ] && make_kbuild_ldflags="-O3 --lto-O3"
 make_flags+=" CCACHE="
 
 ########## Make it ##########
@@ -111,73 +86,17 @@ fi
 
 ########## Processing products ##########
 
-if [ -f "$IMAGE" ]; then
-	cp -f "$IMAGE" ${OUTPUT_DIR}/Image
-fi
-
 vendor_dlkm_need_modules='
 drivers/staging/qcacld-3.0/qca6490.ko
 drivers/net/wireless/cnss2/cnss2.ko
-drivers/iio/adc/qcom-spmi-adc5.ko
-drivers/input/touchscreen/goodix_9916r/goodix_core.ko
-drivers/input/touchscreen/goodix_berlin_driver/goodix_core_los.ko
-drivers/input/touchscreen/xiaomi/xiaomi_touch.ko
-drivers/input/touchscreen/xiaomi_los/xiaomi_touch.ko
-drivers/input/misc/qcom-hv-haptics.ko
-drivers/gpu/msm/msm_kgsl.ko
-drivers/leds/leds-qti-flash.ko
-drivers/cpuidle/governors/qcom_lpm.ko
 drivers/platform/msm/ipa_fmwk/ipa_fmwk.ko
 drivers/platform/msm/mhi_dev/mhi_dev_drv.ko
 drivers/usb/gadget/function/usb_f_gsi.ko
-drivers/pci/controller/pci-msm-drv.ko
-drivers/input/fingerprint/goodix_3626/goodix_3626.ko
-drivers/input/fingerprint/fpc_1540/fpc1540.ko
-drivers/spi/spi-msm-geni.ko
 drivers/staging/binder_prio/binder_prio.ko
-drivers/soc/qcom/vh_fs/vh_fs.ko
-drivers/soc/qcom/sync_fence/qcom_sync_file.ko
 drivers/block/zram/zram.ko
 mm/zsmalloc.ko
 net/wireless/cfg80211.ko
 net/mac80211/mac80211.ko
-techpack/cvp/msm/msm-cvp.ko
-techpack/eva/msm/msm-eva.ko
-techpack/mmrm/driver/msm-mmrm.ko
-techpack/video/msm_video.ko
-techpack/audio/dsp/q6_dlkm.ko
-techpack/audio/dsp/adsp_loader_dlkm.ko
-techpack/audio/dsp/q6_pdr_dlkm.ko
-techpack/audio/dsp/spf_core_dlkm.ko
-techpack/audio/dsp/q6_notifier_dlkm.ko
-techpack/audio/dsp/audio_prm_dlkm.ko
-techpack/audio/dsp/audpkt_ion_dlkm.ko
-techpack/audio/ipc/gpr_dlkm.ko
-techpack/audio/ipc/audio_pkt_dlkm.ko
-techpack/audio/soc/pinctrl_lpi_dlkm.ko
-techpack/audio/soc/swr_dlkm.ko
-techpack/audio/soc/snd_event_dlkm.ko
-techpack/audio/soc/swr_ctrl_dlkm.ko
-techpack/audio/asoc/codecs/wcd937x/wcd937x_dlkm.ko
-techpack/audio/asoc/codecs/wcd937x/wcd937x_slave_dlkm.ko
-techpack/audio/asoc/codecs/wcd938x/wcd938x_dlkm.ko
-techpack/audio/asoc/codecs/wcd938x/wcd938x_slave_dlkm.ko
-techpack/audio/asoc/codecs/lpass-cdc/lpass_cdc_dlkm.ko
-techpack/audio/asoc/codecs/lpass-cdc/lpass_cdc_wsa2_macro_dlkm.ko
-techpack/audio/asoc/codecs/lpass-cdc/lpass_cdc_wsa_macro_dlkm.ko
-techpack/audio/asoc/codecs/lpass-cdc/lpass_cdc_va_macro_dlkm.ko
-techpack/audio/asoc/codecs/lpass-cdc/lpass_cdc_tx_macro_dlkm.ko
-techpack/audio/asoc/codecs/lpass-cdc/lpass_cdc_rx_macro_dlkm.ko
-techpack/audio/asoc/codecs/wsa883x/wsa883x_dlkm.ko
-techpack/audio/asoc/codecs/wcd_core_dlkm.ko
-techpack/audio/asoc/codecs/wcd9xxx_dlkm.ko
-techpack/audio/asoc/codecs/wsa881x_dlkm.ko
-techpack/audio/asoc/codecs/swr_dmic_dlkm.ko
-techpack/audio/asoc/codecs/mbhc_dlkm.ko
-techpack/audio/asoc/codecs/hdmi_dlkm.ko
-techpack/audio/asoc/codecs/swr_haptics_dlkm.ko
-techpack/audio/asoc/codecs/aw882xx/aw882xx_dlkm.ko
-techpack/audio/asoc/machine_dlkm.ko
 techpack/dataipa/drivers/platform/msm/gsi/gsim.ko
 techpack/dataipa/drivers/platform/msm/ipa/ipa_clients/rndisipam.ko
 techpack/dataipa/drivers/platform/msm/ipa/ipa_clients/ipa_clientsm.ko
@@ -192,31 +111,11 @@ techpack/datarmnet-ext/perf_tether/rmnet_perf_tether.ko
 techpack/datarmnet-ext/sch/rmnet_sch.ko
 techpack/datarmnet-ext/shs/rmnet_shs.ko
 techpack/datarmnet-ext/wlan/rmnet_wlan.ko
-'
-
-vendor_boot_need_modules='
-drivers/soc/qcom/qcom_wdt_core.ko
-drivers/rtc/rtc-pm8xxx.ko
-'
-
-alt_need_modules='
-techpack/display/msm/msm_drm.ko
-drivers/cpufreq/qcom-cpufreq-hw.ko
-drivers/power/reset/qcom-dload-mode.ko
-drivers/power/supply/qti_battery_charger.ko
 drivers/power/supply/qti_battery_charger_main.ko
-drivers/soc/qcom/smcinvoke_mod.ko
-drivers/soc/qcom/panel_event_notifier.ko
-drivers/misc/qseecom-mod.ko
-drivers/thermal/mi_thermal_interface.ko
-crypto/lzo.ko
-crypto/lzo-rle.ko
 '
 
 rm ${OUTPUT_DIR}/*.ko 2>/dev/null
-rm ${OUTPUT_DIR}/vendor_boot_modules/*.ko 2>/dev/null
 rm ${OUTPUT_DIR}/vendor_dlkm_modules/*.ko 2>/dev/null
-rm ${OUTPUT_DIR}/alt_kernel_modules/*.ko 2>/dev/null
 
 for module in $vendor_dlkm_need_modules; do
 	[ -f ./out/$module ] || {
@@ -230,24 +129,6 @@ for module in $vendor_dlkm_need_modules; do
 	esac
 	echo "- Striping $module_file_name ..."
 	llvm-strip -S ./out/$module -o ${OUTPUT_DIR}/vendor_dlkm_modules/${module_file_name}
-done
-for module in $vendor_boot_need_modules; do
-	[ -f ./out/$module ] || {
-		echo -e "${yellow}! ${module} not found! ${white}"
-		continue
-	}
-	module_file_name=$(basename $module)
-	echo "- Striping $module_file_name ..."
-	llvm-strip -S ./out/$module -o ${OUTPUT_DIR}/vendor_boot_modules/${module_file_name}
-done
-for module in $alt_need_modules; do
-	[ -f ./out/$module ] || {
-		echo -e "${yellow}! ${module} not found! ${white}"
-		continue
-	}
-	module_file_name=$(basename $module)
-	echo "- Striping $module_file_name ..."
-	llvm-strip -S ./out/$module -o ${OUTPUT_DIR}/alt_kernel_modules/${module_file_name}
 done
 
 t_end=$(date +"%s")
