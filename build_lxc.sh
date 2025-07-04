@@ -112,6 +112,8 @@ techpack/datarmnet-ext/sch/rmnet_sch.ko
 techpack/datarmnet-ext/shs/rmnet_shs.ko
 techpack/datarmnet-ext/wlan/rmnet_wlan.ko
 drivers/power/supply/qti_battery_charger_main.ko
+drivers/input/misc/qcom-hv-haptics.ko
+drivers/leds/leds-qti-flash.ko
 '
 
 rm ${OUTPUT_DIR}/*.ko 2>/dev/null
